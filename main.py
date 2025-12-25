@@ -1,8 +1,10 @@
 import argparse
 import os
 from dotenv import load_dotenv
-from google.genai import types
 from google import genai
+from google.genai import types
+from prompts import system_prompt
+from functions.get_files_info import available_functions
 
 parser = argparse.ArgumentParser(description="Aibot parser")
 parser.add_argument("user_prompt", type=str, help="What is a user prompt?")
@@ -23,7 +25,11 @@ def main():
     print("Hello from aibot!")
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash", contents=messages
+        model="gemini-2.5-flash",
+        contents=messages,
+        config=types.GenerateContentConfig(
+            tools=[available_functions], system_instruction=system_prompt
+        ),
     )
     usage = response.usage_metadata
     if response.usage_metadata is None:
@@ -32,7 +38,11 @@ def main():
         print(f"User prompt: {args.user_prompt}")
         print(f"Prompt tokens: {usage.prompt_token_count}")
         print(f"Response tokens: {usage.candidates_token_count}")
-    print(response.text)
+    if response.function_calls is not None:
+        for function_call in response.function_calls:
+            print(f"Calling function: {function_call.name}({function_call.args})")
+    else:
+        print(response.text)
 
 
 if __name__ == "__main__":
