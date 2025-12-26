@@ -15,10 +15,6 @@ schema_get_files_info = types.FunctionDeclaration(
     ),
 )
 
-available_functions = types.Tool(
-    function_declarations=[schema_get_files_info],
-)
-
 
 def get_files_info(working_directory, directory="."):
     working_dir_abs = os.path.abspath(working_directory)

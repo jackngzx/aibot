@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from prompts import system_prompt
-from functions.get_files_info import available_functions
+from call_function import available_functions, call_function
 
 parser = argparse.ArgumentParser(description="Aibot parser")
 parser.add_argument("user_prompt", type=str, help="What is a user prompt?")
@@ -39,8 +39,19 @@ def main():
         print(f"Prompt tokens: {usage.prompt_token_count}")
         print(f"Response tokens: {usage.candidates_token_count}")
     if response.function_calls is not None:
+        function_results = []
         for function_call in response.function_calls:
-            print(f"Calling function: {function_call.name}({function_call.args})")
+            function_call_result = call_function(function_call)
+            if function_call_result.parts is None:
+                raise Exception("Empty function_call_result.parts")
+            if function_call_result.parts[0].function_response is None:
+                raise Exception(".function_response property is None")
+            if function_call_result.parts[0].function_response.response is None:
+                raise Exception(".function_response.response is None")
+            function_results.append(function_call_result.parts[0])
+            if args.verbose:
+                print(f"-> {function_call_result.parts[0].function_response.response}")
+        return function_results
     else:
         print(response.text)
 
